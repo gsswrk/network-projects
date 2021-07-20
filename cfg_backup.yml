@@ -1,0 +1,23 @@
+---
+- name: Backup Cisco Configs Locally (IOS & NXOS)
+  hosts:
+  connection: network_cli
+  gather_facts: no
+  tasks:
+    - name: Get Running Config
+      cli_command:
+        command: "show running-config"
+      register: shrun
+
+    - name: Create Directory Using Timestamp
+      file:
+        path: "~/cfg_backups/{{ '%m%d%Y' | strftime }}"
+        state: directory
+      run_once: true
+      delegate_to: localhost
+
+    - name: Copy Running Config to Backup Folder
+      copy:
+        content: "{{ shrun.stdout }}"
+        dest: "~/cfg_backups/{{ '%m%d%Y' | strftime }}/{{ inventory_hostname }}_{{ '%m%d%Y_%H%M%S' | strftime }}-config.ios"
+      delegate_to: localhost
