@@ -2,7 +2,6 @@
 
 import napalm 
 import getpass
-from netmiko import ConnectHandler 
 import pandas as pd
 from pandas import DataFrame
 
