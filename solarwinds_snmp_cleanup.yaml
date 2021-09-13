@@ -1,0 +1,56 @@
+---
+- name: Remove Solarwinds SNMP community strings and add v3 if missing
+  hosts: 
+  connection: network_cli
+  gather_facts: no
+  ignore_errors: yes
+
+  tasks:
+    - name: Write mem and take a local backup
+      ios_config:
+        backup: yes
+        save_when: always
+
+    - name: Remove SNMPv2c Configs
+      ios_config:
+        lines:
+          - "no snmp-server community xxxxxxx"
+          - "no snmp-server community xxxxxxx"
+          - "no snmp-server community xxxxxxx"
+
+    - name: Remove SW Username
+      ios_command:
+        commands:
+          - command: "conf t"
+          - command: "no username xxxxxxx privilege 15 secret"
+            prompt: "[confirm]"
+            answer: "\r"
+
+    - name: Collect SNMP Configs
+      cli_command:
+        command: "show run | i snmp-server"
+      register: "snmp_results"
+
+    - name: Collect Account Configs
+      cli_command:
+        command: "show run | i username xxxxxxx"
+      register: "svc_acct_results"
+
+    - name: Add SNMPv3 Configs if not present
+      ios_config:
+        lines:
+          - "snmp-server group xxxxxxx v3 priv"
+          - "snmp-server user xxxxxxx xxxxxxx v3 auth xxxxxxx xxxxxxx priv xxxxxxx xxxxxxx xxxxxxx"
+      when: "'snmp-server group xxxxxxx v3 priv' not in snmp_results.stdout"
+
+    - name: Collect SNMP Configs again for final check
+      cli_command:
+        command: "show run | i snmp-server"
+      register: "snmp_results"
+
+    - name: Final check
+      debug:
+        msg:
+          - "SNMP config: "
+          - "{{ snmp_results.stdout_lines }}"
+          - "Solarwinds Account: {{ svc_acct_results.stdout_lines }}"
