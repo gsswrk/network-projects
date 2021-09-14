@@ -1,4 +1,5 @@
 ---
+## Run with the '--diff' flag to compare the startup a running config at the end of the play
 - name: Remove Solarwinds SNMP community strings and add v3 if missing
   hosts: 
   connection: network_cli
@@ -6,7 +7,7 @@
   ignore_errors: yes
 
   tasks:
-    - name: Write mem and take a local backup
+    - name: Write mem and take a local backup before starting
       ios_config:
         backup: yes
         save_when: always
@@ -31,11 +32,6 @@
         command: "show run | i snmp-server"
       register: "snmp_results"
 
-    - name: Collect Account Configs
-      cli_command:
-        command: "show run | i username xxxxxxx"
-      register: "svc_acct_results"
-
     - name: Add SNMPv3 Configs if not present
       ios_config:
         lines:
@@ -43,14 +39,6 @@
           - "snmp-server user xxxxxxx xxxxxxx v3 auth xxxxxxx xxxxxxx priv xxxxxxx xxxxxxx xxxxxxx"
       when: "'snmp-server group xxxxxxx v3 priv' not in snmp_results.stdout"
 
-    - name: Collect SNMP Configs again for final check
-      cli_command:
-        command: "show run | i snmp-server"
-      register: "snmp_results"
-
-    - name: Final check
-      debug:
-        msg:
-          - "SNMP config: "
-          - "{{ snmp_results.stdout_lines }}"
-          - "Solarwinds Account: {{ svc_acct_results.stdout_lines }}"
+    - name: check the startup-config against the running-config
+      ios_config:
+        diff_against: startup
