@@ -1,5 +1,10 @@
 ---
-## Run with the '--diff' flag to compare the startup a running config at the end of the play
+# This playbook is intended for cleaning up SNMP v2c creds, 
+# removing an NMS service account and adding the new SNMP v3 configs
+
+## Run with the '--diff' flag to compare the updated config 
+## with the startup config collected in the first play 
+
 - name: Remove Solarwinds SNMP community strings and add v3 if missing
   hosts: 
   connection: network_cli
