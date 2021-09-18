@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 
+'''
+This script takes a file named "ALL_hosts.txt" (list of 1 IP per line) 
+and connects to each device in the list to check the vstack config status.
+The hostname, ip, model, serial number, and, vstack config status will be collected
+and output to a file named "vstack_output.csv"
+
+Cisco Bug IDs: CSCvd40673
+See: CVE-2018-0156
+https://nvd.nist.gov/vuln/detail/CVE-2018-0156
+'''
+
 import napalm
 import pprint as pp
 import re
@@ -101,6 +112,6 @@ df = DataFrame({'IP': ip_list,
                 })
 
 # create local file and write to it
-export_csv = df.to_csv(r'vstack_test1.csv', index=None, header=True)
+export_csv = df.to_csv(r'vstack_output.csv', index=None, header=True)
 
 pp.pprint('COMPLETE')
