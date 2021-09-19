@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 
+'''
+Scenario: 
+Mgmt asks for a report with the latest known firmware version, device model and serial
+number for all the network devices at one of your sites. Might be an audit, a report, 
+or a powerpoint presentation, but they want it yesterday. This script will do just that!
+
+Instructions: 
+This script prompts for a text file consisting of a list of IP addresses (1 per line). 
+Using napalm, it connects to each (CISCO IOS) device in the list to collect the hostname,
+ip, model, serial number, and, os version from the running config. Once the IP list has 
+been exhausted, it writes the collected data to a file named "ios_export.csv". The show-run 
+parameters can be adjusted for all your reporting needs! 
+'''
+
 import napalm 
 import getpass
 import pandas as pd
@@ -56,6 +70,6 @@ df = DataFrame({'IP': ip_list,
                 })
 
 # creates local file called 'dc_ios_export.csv' 
-export_csv = df.to_csv(r'dc_ios_export.csv', index=None, header=True)
+export_csv = df.to_csv(r'ios_export.csv', index=None, header=True)
 
 print(export_csv)
