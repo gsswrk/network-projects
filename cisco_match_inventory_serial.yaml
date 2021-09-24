@@ -1,0 +1,64 @@
+---
+## This playbook will take a local file called 'serials.yaml' and compare each serial number in the list against all inventory on the host(s).
+## Helpful when trying to line up serial numbers for support contracts or finding a part in a sea of network devices.
+- name: Cisco Serial Number Lookup Tool for CSV reports
+  hosts: 
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+    - name: Import list of serial numbers from serials.yaml
+        ## example format for serials.yaml ##
+        ## serial:
+        ##   - ABC1234567899
+        ##   - ABC1234567899
+        ##   - ABC1234567899
+      include_vars:
+        file: serials.yaml
+        name: serials
+
+    - name: Run command and parse with ntc_templates
+      ansible.netcommon.cli_parse:
+        command: show inventory
+        parser:
+          name: ansible.netcommon.ntc_templates
+      register: inventory
+
+    - name: Bundle data in a new hash, but only if Serial is not blank.
+      set_fact:
+        matched_serial: |-
+          "{{matched_serial|default([])}}+[{% set ns = namespace(found=false) -%}
+          {%- for ser_item in serials.serial if ser_item in item.sn -%}
+          {%- set ns.found = true -%}
+          {%- set ns.name = inventory_hostname -%}
+          {%- set ns.partver = item.name -%}
+          {%- set ns.ip = ansible_host -%}
+          {%- set ns.part = item.descr | replace(',', '') -%}
+          {%- set ns.partnum = item.pid -%}
+          {%- set ns.sern = item.sn -%}
+          {%- set ns.vid1 = item.vid|trim -%}
+          {%- endfor -%}
+          {%- if ns.found -%}
+          {{ ns.name,ns.ip,ns.partnum,ns.part,ns.vid1,ns.partver,ns.sern | e | replace('\\n', '')  | replace('Markup', '')|trim}}
+          {% endif -%}]"
+      with_items: "{{ inventory.parsed }}"
+      delegate_to: localhost
+      when: item.sn != ''
+
+    - name: Create serial_matches.csv And Add New Lines
+      check_mode: no
+      lineinfile:
+        line: '{{ matched_serial | replace(''"'', '''') | replace(''['', '''') | replace('']'', '''') | replace(''+'', '''') | replace(''('', '''') | replace('')'', '''') | trim }}'
+        create: yes
+        path: serial_matches.csv
+        insertafter: EOF
+      delegate_to: localhost
+
+    - name: Add Header Row to serial_matches.csv
+      check_mode: no
+      lineinfile:
+        path: serial_matches.csv
+        insertbefore: BOF
+        line: hostname,ip,pid,descr,vid,name,sn
+      delegate_to: localhost
+      run_once: true
