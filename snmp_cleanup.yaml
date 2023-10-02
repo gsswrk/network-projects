@@ -5,7 +5,7 @@
 ## Run with the '--diff' flag to compare the updated config 
 ## with the startup config collected in the first play 
 
-- name: Remove Solarwinds SNMP community strings and add v3 if missing
+- name: Remove old SNMP community strings and add v3 if missing
   hosts: 
   connection: network_cli
   gather_facts: no
@@ -24,7 +24,7 @@
           - "no snmp-server community xxxxxxx"
           - "no snmp-server community xxxxxxx"
 
-    - name: Remove SW Username
+    - name: Remove old Username
       ios_command:
         commands:
           - command: "conf t"
